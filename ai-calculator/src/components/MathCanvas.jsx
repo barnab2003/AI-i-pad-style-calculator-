@@ -100,7 +100,7 @@ const MathCanvas = () => {
 
     try {
       // Send the POST request to your Node.js server
-      const response = await fetch('http://localhost:3000/api/solve', {
+      const response = await fetch('https://ai-i-pad-style-calculator.onrender.com/solve', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
