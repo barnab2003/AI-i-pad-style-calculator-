@@ -1,15 +1,12 @@
 const express = require('express');
 const cors = require('cors');
 require('dotenv').config();
-
-// 1. Use the new InferenceClient from the updated SDK
 const { InferenceClient } = require('@huggingface/inference');
 
 const app = express();
 app.use(cors());
 app.use(express.json({ limit: '50mb' }));
 
-// 2. Initialize the client
 const hf = new InferenceClient(process.env.HF_TOKEN);
 
 app.post('/api/solve', async (req, res) => {
@@ -19,26 +16,37 @@ app.post('/api/solve', async (req, res) => {
       return res.status(400).json({ error: "No image data provided" });
     }
 
-    console.log("Image received! Processing with modern Hugging Face SDK...");
+    console.log("Image received! Routing to Hugging Face Vision model...");
 
-    // 3. Convert the base64 data into a Web Blob (Required for the new API)
-    const base64Data = image.replace(/^data:image\/\w+;base64,/, "");
-    const imageBuffer = Buffer.from(base64Data, 'base64');
-    const imageBlob = new Blob([imageBuffer]);
-
-    // 4. Call the OCR model
-    const ocrResponse = await hf.imageToText({
-      model: 'microsoft/trocr-base-handwritten',
-      data: imageBlob,
+    // 1. Use the modern chatCompletion API with a flagship, always-on VLM
+    const response = await hf.chatCompletion({
+      model: "Qwen/Qwen2-VL-7B-Instruct",
+      messages: [
+        {
+          role: "user",
+          content: [
+            { 
+              type: "text", 
+              text: "Read the handwritten math equation in this image. Reply ONLY with the exact numbers and symbols you see (e.g., '1 + 2 ='). Do not add any other words or attempt to solve it." 
+            },
+            { 
+              type: "image_url", 
+              image_url: { url: image } // Passes the raw data URL seamlessly
+            } 
+          ]
+        }
+      ],
+      max_tokens: 20
     });
 
-    const parsedText = ocrResponse.generated_text;
-    console.log("OCR Parsed Text:", parsedText); 
+    // 2. Extract the AI's transcription
+    const parsedText = response.choices[0].message.content;
+    console.log("AI Saw:", parsedText);
 
-    // Clean up the text (remove spaces, trailing equals signs, etc.)
+    // 3. Clean up the text (remove any trailing equals signs or weird spacing)
     let cleanedExpression = parsedText.replace(/=/g, '').trim();
 
-    // Evaluate the math equation safely
+    // 4. Safely evaluate the math equation in Node.js
     let evaluation = "";
     if (/^[0-9+\-*/().\s]+$/.test(cleanedExpression)) {
       try {
@@ -51,8 +59,8 @@ app.post('/api/solve', async (req, res) => {
       evaluation = "?";
     }
 
+    // 5. Package it into LaTeX for your React frontend
     const finalLaTeX = `${cleanedExpression} = ${evaluation}`;
-
     res.json({ result: finalLaTeX });
 
   } catch (error) {
