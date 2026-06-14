@@ -35,31 +35,39 @@ app.post('/api/solve', async (req, res) => {
     const response = await model.generateContent([prompt, imagePart]);
     const parsedText = response.response.text();
     
+    
     console.log("Gemini Saw:", parsedText);
 
     // 3. Robust Regex: Strip out text words, letters, and isolate the math expression
-    let cleanedExpression = parsedText
-      .replace(/[a-zA-Z]/g, '') // Strip out all alphabetic characters
-      .replace(/=/g, '')        // Strip out existing equals signs
+    let mathExpression = parsedText
+      .replace(/x/gi, '*')        // Convert letter 'x' or 'X' to '*'
+      .replace(/×/g, '*')         // Convert standard math multiplication to '*'
+      .replace(/\\times/gi, '*')  // Catch Gemini if it tries to use LaTeX formatting
+      .replace(/÷/g, '/')         // Convert division sign to '/'
+      .replace(/=/g, '')          // Remove any equals signs
+      .replace(/[a-zA-Z\\]/g, '') // Strip out any remaining text words or slashes
       .trim();
 
     // 4. Safely evaluate the expression inside Node.js
-    let evaluation = "";
-    if (/^[0-9+\-*/().\s]+$/.test(cleanedExpression) && cleanedExpression.length > 0) {
+    let evaluation = "?";
+    // Now our filter will successfully pass the translated string!
+    if (/^[0-9+\-*/().\s]+$/.test(mathExpression) && mathExpression.length > 0) {
       try {
-        const mathResult = new Function(`return ${cleanedExpression}`)();
-        evaluation = mathResult.toString();
+        const mathResult = new Function(`return ${mathExpression}`)();
+        // Check if it's a valid number and not Infinity
+        if (isFinite(mathResult)) {
+           evaluation = mathResult.toString();
+        }
       } catch (mathErr) {
         evaluation = "?";
       }
-    } else {
-      evaluation = "?";
     }
 
     // 5. Send back formatted math representation for the React frontend
-    const finalLaTeX = `${cleanedExpression} = ${evaluation}`;
+    const displayExpression = mathExpression.replace(/\*/g, '\\times');
+    const finalLaTeX = `${displayExpression} = ${evaluation}`;
+    
     res.json({ result: finalLaTeX });
-
   } catch (error) {
     console.error("Gemini API Error:", error.message);
     
