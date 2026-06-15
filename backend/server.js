@@ -38,27 +38,27 @@ app.post('/api/solve', async (req, res) => {
     CRITICAL INSTRUCTION: Output ONLY KaTeX-compatible math LaTeX. 
     DO NOT output \\documentclass, \\usepackage, \\begin{document}, or \\end{document}. 
     DO NOT use markdown formatting like \`\`\`latex.
+    DO NOT use dollar signs ($) for inline math. The entire response must be a single valid math block.
     If you need to include English words, you MUST wrap them in \\text{your words here}. 
-    Separate every step with a double backslash (\\\\).`;
+    Separate EVERY step with a double backslash (\\\\).`;
     
     const response = await model.generateContent([prompt, imagePart]);
     
     // Gemini returns the pure, finished LaTeX!
     let finalLaTeX = response.response.text().trim();
     
-    // Safety check: Remove markdown formatting if Gemini disobeys and includes it
     finalLaTeX = finalLaTeX
       .replace(/```latex/gi, '')         // Strip markdown start
       .replace(/```/g, '')               // Strip markdown end
-      .replace(/\\documentclass\{.*?\}/g, '') // Strip document class
-      .replace(/\\usepackage\{.*?\}/g, '')    // Strip packages
-      .replace(/\\begin\{document\}/g, '')    // Strip document start
-      .replace(/\\end\{document\}/g, '')      // Strip document end
+      .replace(/\\documentclass\{.*?\}/g, '') 
+      .replace(/\\usepackage\{.*?\}/g, '')    
+      .replace(/\\begin\{document\}/g, '')    
+      .replace(/\\end\{document\}/g, '')      
+      .replace(/\$/g, '')                // CRITICAL: Strip all dollar signs
       .trim();
 
     console.log("Cleaned KaTeX Output:", finalLaTeX);
 
-    // Send it directly to the React frontend
     res.json({ result: finalLaTeX });
 
   } catch (error) {
