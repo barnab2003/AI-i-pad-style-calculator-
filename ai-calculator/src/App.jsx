@@ -2,7 +2,7 @@ import React from 'react';
 import MathCanvas from './components/MathCanvas';
 // Import the CSS file so the header gets the new styles!
 import './components/MathCanvas.css'; 
-
+import { AuthProvider } from './context/AuthContext'; // Import the provider
 function App() {
   return (
     <div >
@@ -12,8 +12,9 @@ function App() {
         <h1 className="app-title">CAL-C-PAD</h1>
         <p className="app-subtitle">Draw your equation below to calculate the result.</p>
       </div> */}
-      
+      <AuthProvider>
       <MathCanvas />
+      </AuthProvider>
       
     </div>
   );

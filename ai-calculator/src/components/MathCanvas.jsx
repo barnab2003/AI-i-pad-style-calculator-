@@ -3,8 +3,14 @@ import 'katex/dist/katex.min.css';
 import { BlockMath } from 'react-katex';
 import './MathCanvas.css';
 import customLogo from '../assets/my-logo.png';
+// Add this to your other imports at the top
+import { useAuth } from '../context/AuthContext';
+// Near your other imports at the top
+import AuthModal from './AuthModal';
 
 const MathCanvas = () => {
+  const { token, isAuthenticated, logout } = useAuth();
+  const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const canvasRef = useRef(null);
   const [isDrawing, setIsDrawing] = useState(false);
   const [result, setResult] = useState('');
@@ -163,6 +169,12 @@ const MathCanvas = () => {
   };
 
   const calculateMath = async () => {
+
+    if (!isAuthenticated) {
+      setResult("\\text{Please log in to use the AI engine.}");
+      return;
+    }
+
     const canvas = canvasRef.current;
     const base64Image = canvas.toDataURL('image/png');
     setIsLoading(true);
@@ -171,7 +183,11 @@ const MathCanvas = () => {
     try {
       const response = await fetch('https://ai-i-pad-style-calculator.onrender.com/api/solve', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          // Securely pass the JWT to your Render backend
+          'Authorization': `Bearer ${token}` 
+        },
         body: JSON.stringify({ image: base64Image })
       });
       const data = await response.json();
@@ -200,7 +216,12 @@ const MathCanvas = () => {
           <a href="#about">About</a>
           <a href="#how">How it Works</a>
         </nav>
-        <button className="btn-outline">Log in</button>
+        {/* Dynamically swap the button based on auth state */}
+        {isAuthenticated ? (
+          <button className="btn-outline" onClick={logout}>Log out</button>
+        ) : (
+          <button className="btn-outline" onClick={() => setIsAuthModalOpen(true)}>Log in</button>
+        )}
       </header>
 
       <main className="main-content">
@@ -254,6 +275,10 @@ const MathCanvas = () => {
           )}
         </div>
       </main>
+      <AuthModal 
+        isOpen={isAuthModalOpen} 
+        onClose={() => setIsAuthModalOpen(false)} 
+      />
     </div>
   );
 };
