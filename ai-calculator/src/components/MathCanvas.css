@@ -260,3 +260,58 @@ canvas {
     padding: 15px;
   }
 }
+
+/* --- DROPDOWN MENU --- */
+.dropdown-container {
+  position: relative;
+  display: inline-block;
+}
+
+.dropdown-menu {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  margin-top: 5px;
+  background: var(--bg-card);
+  border: 1px solid var(--border-glass);
+  border-radius: 8px;
+  padding: 5px;
+  display: flex;
+  flex-direction: column;
+  backdrop-filter: blur(20px);
+  z-index: 10;
+  box-shadow: 0 10px 20px rgba(0,0,0,0.5);
+}
+
+.dropdown-menu button {
+  background: transparent;
+  border: none;
+  color: var(--text-muted);
+  padding: 10px 15px;
+  text-align: left;
+  cursor: pointer;
+  border-radius: 4px;
+  transition: all 0.2s;
+  white-space: nowrap;
+}
+
+.dropdown-menu button:hover {
+  background: rgba(62, 224, 143, 0.1);
+  color: var(--accent-mint);
+}
+
+/* --- FLOATING TEXT INPUT --- */
+.floating-text-input {
+  position: absolute;
+  background: rgba(0, 0, 0, 0.6);
+  border: 1px solid var(--accent-mint);
+  color: var(--accent-mint);
+  font-family: 'Inter', sans-serif;
+  font-size: 20px;
+  padding: 2px 8px;
+  border-radius: 4px;
+  outline: none;
+  transform: translateY(-50%); /* Centers the input vertically on the click point */
+  z-index: 5;
+  box-shadow: 0 0 10px var(--accent-mint-glow);
+}

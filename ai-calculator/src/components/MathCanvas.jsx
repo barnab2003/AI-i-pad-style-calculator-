@@ -17,10 +17,19 @@ const MathCanvas = () => {
   const [isLoading, setIsLoading] = useState(false);
   
   // Tools & Interaction State
-  const [tool, setTool] = useState('pen'); // 'pen', 'line', 'rect', 'circle', 'eraser'
+  const [tool, setTool] = useState('pen'); 
   const [startX, setStartX] = useState(0);
   const [startY, setStartY] = useState(0);
   const [snapshot, setSnapshot] = useState(null);
+
+  // NEW: UI States for Dropdown and Text Box
+  const [isShapeMenuOpen, setIsShapeMenuOpen] = useState(false);
+  const [textInput, setTextInput] = useState({ visible: false, x: 0, y: 0, text: '' });
+
+  // NEW: Curve State Machine
+  // step 0: inactive, step 1: drawing line, step 2: bending line
+  const [curveStep, setCurveStep] = useState(0); 
+  const [curveEnd, setCurveEnd] = useState({ x: 0, y: 0 });
 
   // Undo History State
   const [history, setHistory] = useState([]);
@@ -76,10 +85,25 @@ const MathCanvas = () => {
 
   const startInteraction = (e) => {
     e.preventDefault();
+    if (textInput.visible) return; // Don't draw if currently typing
+
     const { x, y } = getPos(e);
     const canvas = canvasRef.current;
     const ctx = canvas.getContext('2d');
 
+    // Handle the Text Tool
+    if (tool === 'text') {
+      setTextInput({ visible: true, x, y, text: '' });
+      return;
+    }
+
+    // Handle Curve Step 2 (Bending)
+    if (tool === 'curve' && curveStep === 1) {
+      setIsDrawing(true);
+      return; 
+    }
+
+    // Standard starting logic for all other tools (and Curve Step 1)
     setIsDrawing(true);
     setStartX(x);
     setStartY(y);
@@ -97,10 +121,9 @@ const MathCanvas = () => {
     const ctx = canvas.getContext('2d');
 
     if (tool !== 'pen' && tool !== 'eraser' && snapshot) {
-      ctx.putImageData(snapshot, 0, 0);
+      ctx.putImageData(snapshot, 0, 0); // Reset preview
     }
 
-    // Set styling based on whether it's a pen or an eraser
     ctx.strokeStyle = tool === 'eraser' ? '#1A1B26' : '#3EE08F';
     ctx.lineWidth = tool === 'eraser' ? 25 : 3;
 
@@ -121,26 +144,87 @@ const MathCanvas = () => {
       const radius = Math.sqrt(Math.pow(startX - x, 2) + Math.pow(startY - y, 2));
       ctx.arc(startX, startY, radius, 0, 2 * Math.PI);
       ctx.stroke();
+    } else if (tool === 'arrow') {
+      // Draw Line
+      ctx.beginPath();
+      ctx.moveTo(startX, startY);
+      ctx.lineTo(x, y);
+      ctx.stroke();
+      // Calculate and Draw Arrowhead
+      const headlen = 15;
+      const angle = Math.atan2(y - startY, x - startX);
+      ctx.beginPath();
+      ctx.moveTo(x, y);
+      ctx.lineTo(x - headlen * Math.cos(angle - Math.PI / 6), y - headlen * Math.sin(angle - Math.PI / 6));
+      ctx.moveTo(x, y);
+      ctx.lineTo(x - headlen * Math.cos(angle + Math.PI / 6), y - headlen * Math.sin(angle + Math.PI / 6));
+      ctx.stroke();
+    } else if (tool === 'curve') {
+      ctx.beginPath();
+      ctx.moveTo(startX, startY);
+      if (curveStep === 0) {
+        // Step 1: Draw the initial straight line
+        ctx.lineTo(x, y);
+      } else if (curveStep === 1) {
+        // Step 2: Bend the line (Quadratic Bezier)
+        ctx.quadraticCurveTo(x, y, curveEnd.x, curveEnd.y);
+      }
+      ctx.stroke();
     }
   };
 
   const stopInteraction = (e) => {
     e.preventDefault();
-    if (isDrawing) {
-      const canvas = canvasRef.current;
-      const ctx = canvas.getContext('2d');
-      
-      // Take a new snapshot and push it to the history array
-      const currentCanvasState = ctx.getImageData(0, 0, canvas.width, canvas.height);
-      const newHistory = history.slice(0, historyStep + 1); // Discard any "redo" futures if we draw something new
-      newHistory.push(currentCanvasState);
-      
-      setHistory(newHistory);
-      setHistoryStep(newHistory.length - 1);
+    if (!isDrawing) return;
+
+    const { x, y } = getPos(e);
+    const canvas = canvasRef.current;
+    const ctx = canvas.getContext('2d');
+
+    // Special logic for the Curve Tool's 2-step process
+    if (tool === 'curve') {
+      if (curveStep === 0) {
+        setCurveEnd({ x, y });
+        setCurveStep(1); // Ready to bend
+        setIsDrawing(false);
+        return; // Don't save history yet!
+      } else if (curveStep === 1) {
+        setCurveStep(0); // Finished bending, reset
+      }
     }
+    
+    // Save to history for all completed strokes
+    const currentCanvasState = ctx.getImageData(0, 0, canvas.width, canvas.height);
+    const newHistory = history.slice(0, historyStep + 1);
+    newHistory.push(currentCanvasState);
+    setHistory(newHistory);
+    setHistoryStep(newHistory.length - 1);
+    
     setIsDrawing(false);
   };
 
+  // NEW: Function to finalize text from the floating input
+  const finalizeText = () => {
+    if (!textInput.text.trim()) {
+      setTextInput({ visible: false, x: 0, y: 0, text: '' });
+      return;
+    }
+    
+    const canvas = canvasRef.current;
+    const ctx = canvas.getContext('2d');
+    ctx.font = '20px Inter';
+    ctx.fillStyle = '#3EE08F';
+    ctx.fillText(textInput.text, textInput.x, textInput.y + 20); // +20 offsets baseline
+    
+    // Save to history
+    const currentCanvasState = ctx.getImageData(0, 0, canvas.width, canvas.height);
+    const newHistory = history.slice(0, historyStep + 1);
+    newHistory.push(currentCanvasState);
+    setHistory(newHistory);
+    setHistoryStep(newHistory.length - 1);
+
+    setTextInput({ visible: false, x: 0, y: 0, text: '' });
+  };
   // --- UNDO FUNCTION ---
   const undo = () => {
     if (historyStep > 0) {
@@ -241,14 +325,32 @@ const MathCanvas = () => {
             <div className="tool-group">
               <button className={`tool-btn ${tool === 'pen' ? 'active' : ''}`} onClick={() => setTool('pen')}>✎ Pen</button>
               <button className={`tool-btn ${tool === 'line' ? 'active' : ''}`} onClick={() => setTool('line')}>— Line</button>
-              <button className={`tool-btn ${tool === 'rect' ? 'active' : ''}`} onClick={() => setTool('rect')}>▭ Rect</button>
-              <button className={`tool-btn ${tool === 'circle' ? 'active' : ''}`} onClick={() => setTool('circle')}>◯ Circle</button>
+              <button className={`tool-btn ${tool === 'curve' ? 'active' : ''}`} onClick={() => { setTool('curve'); setCurveStep(0); }}>〰 Curve</button>
+              
+              {/* SHAPE DROPDOWN */}
+              <div className="dropdown-container">
+                <button 
+                  className={`tool-btn ${['rect', 'circle', 'arrow'].includes(tool) ? 'active' : ''}`} 
+                  onClick={() => setIsShapeMenuOpen(!isShapeMenuOpen)}
+                >
+                  {tool === 'rect' ? '▭ Rect' : tool === 'circle' ? '◯ Circle' : tool === 'arrow' ? '↗ Arrow' : '△ Shapes ▼'}
+                </button>
+                
+                {isShapeMenuOpen && (
+                  <div className="dropdown-menu">
+                    <button onClick={() => { setTool('rect'); setIsShapeMenuOpen(false); }}>▭ Rectangle</button>
+                    <button onClick={() => { setTool('circle'); setIsShapeMenuOpen(false); }}>◯ Circle</button>
+                    <button onClick={() => { setTool('arrow'); setIsShapeMenuOpen(false); }}>↗ Arrow</button>
+                  </div>
+                )}
+              </div>
+
+              <button className={`tool-btn ${tool === 'text' ? 'active' : ''}`} onClick={() => setTool('text')}>T Text</button>
               <button className={`tool-btn ${tool === 'eraser' ? 'active' : ''}`} onClick={() => setTool('eraser')}>▱ Eraser</button>
             </div>
+            
             <div className="action-group">
-              <button onClick={undo} disabled={historyStep <= 0} className="btn-text" style={{ opacity: historyStep <= 0 ? 0.5 : 1 }}>
-                ↩ Undo
-              </button>
+              <button onClick={undo} disabled={historyStep <= 0} className="btn-text" style={{ opacity: historyStep <= 0 ? 0.5 : 1 }}>↩ Undo</button>
               <button onClick={clearCanvas} className="btn-text">Clear</button>
               <button onClick={calculateMath} disabled={isLoading} className="btn-primary">
                 {isLoading ? 'Solving...' : 'Calculate Now'}
@@ -257,9 +359,25 @@ const MathCanvas = () => {
           </div>
 
           {/* CANVAS */}
-          <div className="canvas-wrapper">
+          <div className="canvas-wrapper" style={{ position: 'relative' }}>
+            {/* FLOATING TEXT INPUT */}
+            {textInput.visible && (
+              <input
+                type="text"
+                autoFocus
+                className="floating-text-input"
+                style={{ left: textInput.x, top: textInput.y }}
+                value={textInput.text}
+                onChange={(e) => setTextInput({ ...textInput, text: e.target.value })}
+                onBlur={finalizeText}
+                onKeyDown={(e) => { if (e.key === 'Enter') finalizeText(); }}
+                placeholder="Type & Enter"
+              />
+            )}
+
             <canvas
               ref={canvasRef}
+              // ... keep your existing onMouseDown/Touch events here ...
               onMouseDown={startInteraction}
               onMouseMove={drawInteraction}
               onMouseUp={stopInteraction}
