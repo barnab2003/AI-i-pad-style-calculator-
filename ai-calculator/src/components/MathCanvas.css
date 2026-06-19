@@ -192,7 +192,7 @@ body {
   font-weight: 700;
   font-size: 1rem;
   cursor: pointer;
-  box-shadow: 0 0 15px var(--accent-mint-glow);
+  /* .action-btn: 0 0 15px var(--accent-mint-glow); */
   transition: all 0.2s;
   height: 40px; /* Matches the height of your minimalist square icons */
   display: flex;
