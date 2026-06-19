@@ -314,7 +314,7 @@ const MathCanvas = () => {
 
       <main className="main-content">
         <div className="hero-text">
-          <h2>Make your complex problems<br/>make complete sense</h2>
+          {/* <h2>Make your complex problems<br/>make complete sense</h2> */}
           <p>Draw equations, geometry, or physics diagrams and get your solutions instantly.</p>
         </div>
 
@@ -323,9 +323,9 @@ const MathCanvas = () => {
           {/* TOOLBAR */}
           <div className="toolbar">
             <div className="tool-group">
-              <button className={`tool-btn ${tool === 'pen' ? 'active' : ''}`} onClick={() => setTool('pen')}>✎ Pen</button>
-              <button className={`tool-btn ${tool === 'line' ? 'active' : ''}`} onClick={() => setTool('line')}>— Line</button>
-              <button className={`tool-btn ${tool === 'curve' ? 'active' : ''}`} onClick={() => { setTool('curve'); setCurveStep(0); }}>〰 Curve</button>
+              <button className={`tool-btn ${tool === 'pen' ? 'active' : ''}`} onClick={() => setTool('pen')}>✎</button>
+              <button className={`tool-btn ${tool === 'line' ? 'active' : ''}`} onClick={() => setTool('line')}>—</button>
+              <button className={`tool-btn ${tool === 'curve' ? 'active' : ''}`} onClick={() => { setTool('curve'); setCurveStep(0); }}>〰</button>
               
               {/* SHAPE DROPDOWN */}
               <div className="dropdown-container">
@@ -333,7 +333,7 @@ const MathCanvas = () => {
                   className={`tool-btn ${['rect', 'circle', 'arrow'].includes(tool) ? 'active' : ''}`} 
                   onClick={() => setIsShapeMenuOpen(!isShapeMenuOpen)}
                 >
-                  {tool === 'rect' ? '▭ Rect' : tool === 'circle' ? '◯ Circle' : tool === 'arrow' ? '↗ Arrow' : '△ Shapes ▼'}
+                  {tool === 'rect' ? '▭' : tool === 'circle' ? '◯' : tool === 'arrow' ? '↗' : '△ Shapes ▼'}
                 </button>
                 
                 {isShapeMenuOpen && (
@@ -345,15 +345,15 @@ const MathCanvas = () => {
                 )}
               </div>
 
-              <button className={`tool-btn ${tool === 'text' ? 'active' : ''}`} onClick={() => setTool('text')}>T Text</button>
+              <button className={`tool-btn ${tool === 'text' ? 'active' : ''}`} onClick={() => setTool('text')}>Text</button>
               <button className={`tool-btn ${tool === 'eraser' ? 'active' : ''}`} onClick={() => setTool('eraser')}>▱ Eraser</button>
             </div>
             
             <div className="action-group">
-              <button onClick={undo} disabled={historyStep <= 0} className="btn-text" style={{ opacity: historyStep <= 0 ? 0.5 : 1 }}>↩ Undo</button>
+              <button onClick={undo} disabled={historyStep <= 0} className="btn-text" style={{ opacity: historyStep <= 0 ? 0.5 : 1 }}>↩</button>
               <button onClick={clearCanvas} className="btn-text">Clear</button>
               <button onClick={calculateMath} disabled={isLoading} className="btn-primary">
-                {isLoading ? 'Solving...' : 'Calculate Now'}
+                {isLoading ? 'Solving...' : 'Solve'}
               </button>
             </div>
           </div>
