@@ -176,22 +176,41 @@ body {
 }
 
 /* Ensure the Solve button matches the height of the icons */
+/* Ensure your root variables still have the mint colors at the top of your CSS file */
+/* --bg-deep: #13111C;
+  --accent-mint: #3EE08F;
+  --accent-mint-glow: rgba(62, 224, 143, 0.3);
+*/
+
+/* The Glowing Green Solve Button */
 .btn-primary {
-  height: 40px;
+  background-color: var(--accent-mint);
+  color: var(--bg-deep); /* Dark text on the bright button for readability */
+  border: none;
+  padding: 0 24px;
+  border-radius: 8px;
+  font-weight: 700;
+  font-size: 1rem;
+  cursor: pointer;
+  box-shadow: 0 0 15px var(--accent-mint-glow);
+  transition: all 0.2s;
+  height: 40px; /* Matches the height of your minimalist square icons */
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 0 20px;
 }
+
 .btn-primary:hover {
   transform: translateY(-2px);
-  box-shadow: 0 0 25px rgba(62, 224, 143, 0.5);
+  box-shadow: 0 0 25px rgba(62, 224, 143, 0.6);
 }
 
 .btn-primary:disabled {
-  background-color: var(--text-muted);
+  background-color: #4a4a4a; /* A dull gray when loading */
+  color: #888;
   box-shadow: none;
   cursor: not-allowed;
+  transform: none;
 }
 
 /* CANVAS */
