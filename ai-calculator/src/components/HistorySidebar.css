@@ -1,68 +1,4 @@
-.sidebar-overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100vw;
-  height: 100vh;
-  background: rgba(0, 0, 0, 0.4);
-  backdrop-filter: blur(4px);
-  z-index: 900;
-  opacity: 0;
-  pointer-events: none;
-  transition: opacity 0.3s ease;
-}
-
-.sidebar-overlay.open {
-  opacity: 1;
-  pointer-events: all;
-}
-
-.glass-sidebar {
-  position: fixed;
-  top: 0;
-  right: -400px; /* Hidden off-screen initially */
-  width: 100%;
-  max-width: 400px;
-  height: 100vh;
-  background: var(--bg-card);
-  border-left: 1px solid var(--border-glass);
-  backdrop-filter: blur(20px);
-  z-index: 1000;
-  transition: right 0.3s cubic-bezier(0.16, 1, 0.3, 1);
-  display: flex;
-  flex-direction: column;
-  box-shadow: -10px 0 30px rgba(0,0,0,0.5);
-}
-
-.glass-sidebar.open {
-  right: 0;
-}
-
-.sidebar-header {
-  padding: 25px;
-  border-bottom: 1px solid var(--border-glass);
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.sidebar-header h3 {
-  margin: 0;
-  font-size: 1.5rem;
-  color: var(--text-main);
-}
-
-.sidebar-content {
-  flex: 1;
-  overflow-y: auto;
-  padding: 20px;
-}
-
-.empty-state {
-  text-align: center;
-  color: var(--text-muted);
-  margin-top: 40px;
-}
+/* ... keep everything above .history-list exactly the same ... */
 
 .history-list {
   display: flex;
@@ -70,28 +6,77 @@
   gap: 15px;
 }
 
+/* The outer container for the accordion item */
 .history-card {
   background: rgba(0,0,0,0.2);
   border: 1px solid var(--border-glass);
   border-radius: 12px;
-  padding: 15px;
-  transition: transform 0.2s;
+  overflow: hidden; /* Keeps the borders neat when expanding */
+  transition: border-color 0.2s;
 }
 
 .history-card:hover {
-  transform: translateY(-2px);
-  border-color: rgba(62, 224, 143, 0.3);
+  border-color: rgba(62, 224, 143, 0.4);
+}
+
+/* The clickable top section */
+.history-card-header {
+  padding: 15px;
+  cursor: pointer;
+  background: transparent;
+  transition: background 0.2s;
+}
+
+.history-card-header:hover {
+  background: rgba(255, 255, 255, 0.03);
+}
+
+/* The single-line math preview */
+.history-preview {
+  font-size: 1.1rem;
+  color: var(--text-main);
+  pointer-events: none; /* Let the user click through the text to the header */
+}
+
+/* Force the preview to stay compact and remove KaTeX's default margins */
+.history-preview .katex-display {
+  margin: 0;
+  overflow: hidden; 
+}
+
+/* The date and arrow container */
+.history-meta {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px solid rgba(255, 255, 255, 0.05);
 }
 
 .history-date {
   font-size: 0.8rem;
   color: var(--text-muted);
-  margin-bottom: 10px;
-  text-align: right;
 }
 
-.history-math {
-  font-size: 1.1rem;
+/* The rotating arrow */
+.chevron {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  transition: transform 0.3s ease;
+}
+
+.chevron.open {
+  transform: rotate(180deg);
   color: var(--accent-mint);
+}
+
+/* The expanded content area */
+.history-card-body {
+  padding: 15px;
+  background: rgba(0, 0, 0, 0.3); /* Slightly darker to differentiate from header */
+  border-top: 1px solid var(--border-glass);
+  color: var(--accent-mint);
+  font-size: 1.1rem;
   overflow-x: auto;
 }
